@@ -3,6 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/plugin"
@@ -30,19 +31,18 @@ func provider() terraform.ResourceProvider {
 
 func resourceTestResource() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTestCreate,
+		Create: resourceTestUpdate,
+		Update: resourceTestUpdate,
 		Read:   resourceTestRead,
 		Delete: resourceTestDelete,
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 			"content": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 			"size": &schema.Schema{
 				Type:     schema.TypeInt,
@@ -53,7 +53,7 @@ func resourceTestResource() *schema.Resource {
 	}
 }
 
-func resourceTestCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceTestUpdate(d *schema.ResourceData, meta interface{}) error {
 	log.Println("[INFO] write")
 	err := ioutil.WriteFile(d.Get("name").(string), []byte(d.Get("content").(string)), 0600)
 	if err != nil {
@@ -75,7 +75,7 @@ func resourceTestRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceTestDelete(d *schema.ResourceData, meta interface{}) error {
-	return nil
+	return os.Remove(d.Get("name").(string))
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
