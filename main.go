@@ -39,6 +39,7 @@ func resourceTestResource() *schema.Resource {
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 			},
 			"content": &schema.Schema{
 				Type:     schema.TypeString,
