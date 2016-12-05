@@ -44,6 +44,11 @@ func resourceTestResource() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"size": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -55,6 +60,7 @@ func resourceTestCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 	d.SetId(d.Get("name").(string))
+	d.Set("size", len(d.Get("content").(string)))
 	return nil
 }
 
