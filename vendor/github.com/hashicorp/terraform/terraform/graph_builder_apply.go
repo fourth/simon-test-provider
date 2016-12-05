@@ -40,7 +40,7 @@ func (b *ApplyGraphBuilder) Build(path []string) (*Graph, error) {
 	return (&BasicGraphBuilder{
 		Steps:    b.Steps(),
 		Validate: true,
-		Name:     "ApplyGraphBuilder",
+		Name:     "apply",
 	}).Build(path)
 }
 

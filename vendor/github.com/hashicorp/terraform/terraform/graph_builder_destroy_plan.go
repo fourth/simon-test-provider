@@ -26,7 +26,7 @@ func (b *DestroyPlanGraphBuilder) Build(path []string) (*Graph, error) {
 	return (&BasicGraphBuilder{
 		Steps:    b.Steps(),
 		Validate: true,
-		Name:     "DestroyPlanGraphBuilder",
+		Name:     "destroy",
 	}).Build(path)
 }
 

@@ -2,7 +2,6 @@ package hil
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"sync"
 
@@ -33,7 +32,6 @@ type SemanticChecker func(ast.Node) error
 //     TypeString:  string
 //     TypeList:    []interface{}
 //     TypeMap:     map[string]interface{}
-//     TypBool:     bool
 type EvaluationResult struct {
 	Type  EvalType
 	Value interface{}
@@ -43,10 +41,6 @@ type EvaluationResult struct {
 // which has invalid syntax, missing variables, or some other type of error.
 // The error is described out of band in the accompanying error return value.
 var InvalidResult = EvaluationResult{Type: TypeInvalid, Value: nil}
-
-// errExitUnknown is an internal error that when returned means the result
-// is an unknown value. We use this for early exit.
-var errExitUnknown = errors.New("unknown value")
 
 func Eval(root ast.Node, config *EvalConfig) (EvaluationResult, error) {
 	output, outputType, err := internalEval(root, config)
@@ -78,16 +72,6 @@ func Eval(root ast.Node, config *EvalConfig) (EvaluationResult, error) {
 			Type:  TypeString,
 			Value: output,
 		}, nil
-	case ast.TypeBool:
-		return EvaluationResult{
-			Type:  TypeBool,
-			Value: output,
-		}, nil
-	case ast.TypeUnknown:
-		return EvaluationResult{
-			Type:  TypeUnknown,
-			Value: UnknownValue,
-		}, nil
 	default:
 		return InvalidResult, fmt.Errorf("unknown type %s as interpolation output", outputType)
 	}
@@ -113,10 +97,6 @@ func internalEval(root ast.Node, config *EvalConfig) (interface{}, ast.Type, err
 		ast.TypeString: {
 			ast.TypeInt:   "__builtin_StringToInt",
 			ast.TypeFloat: "__builtin_StringToFloat",
-			ast.TypeBool:  "__builtin_StringToBool",
-		},
-		ast.TypeBool: {
-			ast.TypeString: "__builtin_BoolToString",
 		},
 	}
 
@@ -174,12 +154,6 @@ func (v *evalVisitor) Visit(root ast.Node) (interface{}, ast.Type, error) {
 		result = new(ast.LiteralNode)
 	}
 	resultErr := v.err
-	if resultErr == errExitUnknown {
-		// This means the return value is unknown and we used the error
-		// as an early exit mechanism. Reset since the value on the stack
-		// should be the unknown value.
-		resultErr = nil
-	}
 
 	// Clear everything else so we aren't just dangling
 	v.Stack.Reset()
@@ -214,13 +188,6 @@ func (v *evalVisitor) visit(raw ast.Node) ast.Node {
 		Value: out,
 		Typex: outType,
 	})
-
-	if outType == ast.TypeUnknown {
-		// Halt immediately
-		v.err = errExitUnknown
-		return raw
-	}
-
 	return raw
 }
 
@@ -363,15 +330,11 @@ func (v *evalOutput) Eval(s ast.Scope, stack *ast.Stack) (interface{}, ast.Type,
 	}
 
 	// Special case the single list and map
-	if len(nodes) == 1 {
-		switch t := nodes[0].Typex; t {
-		case ast.TypeList:
-			fallthrough
-		case ast.TypeMap:
-			fallthrough
-		case ast.TypeUnknown:
-			return nodes[0].Value, t, nil
-		}
+	if len(nodes) == 1 && nodes[0].Typex == ast.TypeList {
+		return nodes[0].Value, ast.TypeList, nil
+	}
+	if len(nodes) == 1 && nodes[0].Typex == ast.TypeMap {
+		return nodes[0].Value, ast.TypeMap, nil
 	}
 
 	// Otherwise concatenate the strings
@@ -397,12 +360,6 @@ func (v *evalVariableAccess) Eval(scope ast.Scope, _ *ast.Stack) (interface{}, a
 	if !ok {
 		return nil, ast.TypeInvalid, fmt.Errorf(
 			"unknown variable accessed: %s", v.Name)
-	}
-
-	// Check if the variable contains any unknown types. If so, then
-	// mark it as unknown and return that type.
-	if ast.IsUnknown(variable) {
-		return nil, ast.TypeUnknown, nil
 	}
 
 	return variable.Value, variable.Type, nil

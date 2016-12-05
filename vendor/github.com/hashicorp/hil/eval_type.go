@@ -9,8 +9,6 @@ type EvalType uint32
 const (
 	TypeInvalid EvalType = 0
 	TypeString  EvalType = 1 << iota
-	TypeBool
 	TypeList
 	TypeMap
-	TypeUnknown
 )

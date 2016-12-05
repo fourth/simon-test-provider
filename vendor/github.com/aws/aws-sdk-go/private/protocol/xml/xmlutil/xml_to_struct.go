@@ -63,8 +63,6 @@ func XMLToStruct(d *xml.Decoder, s *xml.StartElement) (*XMLNode, error) {
 				return out, e
 			}
 			node.Name = typed.Name
-			node.Attr = out.Attr
-			node = adaptNode(node)
 			slice = append(slice, node)
 			out.Children[name] = slice
 		case xml.EndElement:
@@ -74,26 +72,6 @@ func XMLToStruct(d *xml.Decoder, s *xml.StartElement) (*XMLNode, error) {
 		}
 	}
 	return out, nil
-}
-
-func adaptNode(node *XMLNode) *XMLNode {
-	ns := map[string]string{}
-	for _, a := range node.Attr {
-		if a.Name.Space == "xmlns" {
-			ns[a.Value] = a.Name.Local
-			break
-		}
-	}
-
-	for i, a := range node.Attr {
-		if a.Name.Space == "xmlns" {
-			continue
-		}
-		if v, ok := ns[node.Attr[i].Name.Space]; ok {
-			node.Attr[i].Name.Space = v
-		}
-	}
-	return node
 }
 
 // StructToXML writes an XMLNode to a xml.Encoder as tokens.

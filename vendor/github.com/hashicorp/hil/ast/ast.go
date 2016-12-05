@@ -19,21 +19,12 @@ type Node interface {
 
 // Pos is the starting position of an AST node
 type Pos struct {
-	Column, Line int    // Column/Line number, starting at 1
-	Filename     string // Optional source filename, if known
+	Column, Line int // Column/Line number, starting at 1
 }
 
 func (p Pos) String() string {
-	if p.Filename == "" {
-		return fmt.Sprintf("%d:%d", p.Line, p.Column)
-	} else {
-		return fmt.Sprintf("%s:%d:%d", p.Filename, p.Line, p.Column)
-	}
+	return fmt.Sprintf("%d:%d", p.Line, p.Column)
 }
-
-// InitPos is an initiaial position value. This should be used as
-// the starting position (presets the column and line to 1).
-var InitPos = Pos{Column: 1, Line: 1}
 
 // Visitors are just implementations of this function.
 //
@@ -58,19 +49,11 @@ type Type uint32
 const (
 	TypeInvalid Type = 0
 	TypeAny     Type = 1 << iota
-	TypeBool
 	TypeString
 	TypeInt
 	TypeFloat
 	TypeList
 	TypeMap
-
-	// This is a special type used by Terraform to mark "unknown" values.
-	// It is impossible for this type to be introduced into your HIL programs
-	// unless you explicitly set a variable to this value. In that case,
-	// any operation including the variable will return "TypeUnknown" as the
-	// type.
-	TypeUnknown
 )
 
 func (t Type) Printable() string {
@@ -79,8 +62,6 @@ func (t Type) Printable() string {
 		return "invalid type"
 	case TypeAny:
 		return "any type"
-	case TypeBool:
-		return "type bool"
 	case TypeString:
 		return "type string"
 	case TypeInt:
@@ -91,8 +72,6 @@ func (t Type) Printable() string {
 		return "type list"
 	case TypeMap:
 		return "type map"
-	case TypeUnknown:
-		return "type unknown"
 	default:
 		return "unknown type"
 	}
