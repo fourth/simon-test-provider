@@ -31,8 +31,8 @@ func provider() terraform.ResourceProvider {
 
 func resourceTestResource() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTestUpdate,
-		Update: resourceTestUpdate,
+		Create: resourceTestCreateOrUpdate,
+		Update: resourceTestCreateOrUpdate,
 		Read:   resourceTestRead,
 		Delete: resourceTestDelete,
 		Schema: map[string]*schema.Schema{
@@ -53,15 +53,16 @@ func resourceTestResource() *schema.Resource {
 	}
 }
 
-func resourceTestUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceTestCreateOrUpdate(d *schema.ResourceData, meta interface{}) error {
+	content := d.Get("content").(string)
+	name := d.Get("name").(string)
 	log.Println("[INFO] write")
-	err := ioutil.WriteFile(d.Get("name").(string), []byte(d.Get("content").(string)), 0600)
+	err := ioutil.WriteFile(name, []byte(content), 0600)
 	if err != nil {
 		return err
 	}
 	d.SetId(d.Get("name").(string))
-	d.Set("size", len(d.Get("content").(string)))
-	return nil
+	return d.Set("size", len(content))
 }
 
 func resourceTestRead(d *schema.ResourceData, meta interface{}) error {
@@ -70,8 +71,8 @@ func resourceTestRead(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
-	d.Set("content", string(b))
-	return nil
+
+	return d.Set("content", string(b))
 }
 
 func resourceTestDelete(d *schema.ResourceData, meta interface{}) error {
